@@ -1,0 +1,15 @@
+{
+	"Window" : {
+		"Height" : 600,
+		"Width" : 500
+	},
+	"Colors" : {
+		"BackGround" : "#2c3e50",
+		"Base" : "#636e72",
+		"Accent" : "#b2bec3",
+		"SnowFlake" : "#72e0e8",
+		"DisplayBg" : "#9de800",
+		"Text" : "#082708",
+		"OutLine" : "#1c1c1c"
+	}
+}
