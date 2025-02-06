@@ -1,15 +1,46 @@
 {
-	"Window" : {
-		"Height" : 600,
-		"Width" : 500
+	"Software" :{
+		"Title" : "Flake Maker",
+		"Developer" : "Jutier",
+		"Version" : "v1"
 	},
-	"Colors" : {
-		"BackGround" : "#2c3e50",
-		"Base" : "#636e72",
-		"Accent" : "#b2bec3",
-		"SnowFlake" : "#72e0e8",
-		"DisplayBg" : "#9de800",
-		"Text" : "#082708",
-		"OutLine" : "#1c1c1c"
+	"FPS": 30,
+	"Window" : {
+		"_Comment" : "Preffer a vertical resolution",
+		"Height" : 720,
+		"Width" : 600
+	},
+	"Snowflake" : {
+		"MaxGrowth" : 25,
+		"Thick" : 2,
+		"Colors" : {
+			"BackGround" : "#282923",
+			"Young" : "#2AB6E8",
+			"Old" : "#c0c4cf"
+		},
+		"BranchCrossing" : true,
+		"MaxBranching" : 6
+	},
+	"UI" : {
+		"BackgroundColor" : "#5c677d",
+		"OutLineColor" : "#1c1c1c",
+		"ParamDisplay" : {
+			"Height" : 60,
+			"Width" : 150,
+			"Font" : null,
+			"FontSize" : 26,
+			"BackgroundColor" : "#9de800",
+			"TextColor" : "#082708"
+		},
+		"Knob" : {
+			"Radius" : 30,
+			"Color" : "#b2bec3"
+		},
+		"Details" : {
+			"Font" : null,
+			"FontSize" : 20,
+			"TextColor" : "#fc3063"
+
+		}
 	}
 }
