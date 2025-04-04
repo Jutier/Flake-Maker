@@ -1,9 +1,8 @@
-"""
-Flake Maker by Jutier
-Version: v1
+# Flake Maker by Jutier
+# Version: v1.2
 
-This module provides some usefull functions for other modules.
-"""
+# This module provides some usefull functions for other modules.
+
 from math import sin, cos
 
 def interp(value, original_min, original_max, target_min, target_max):
@@ -28,7 +27,7 @@ def rotatePoints(points, center, angle):
 	Rotate a list of points around a center point by a given angle.
 
 	Args:
-		points (list of tuple): A list of (x, y) points to be rotated.
+		points (tuple of tuples): A tuple of (x, y) points to be rotated.
 		center (tuple): The (x, y) coordinates of the center point.
 		angle (float): The angle of rotation in radians.
 
@@ -42,4 +41,4 @@ def rotatePoints(points, center, angle):
 		rotX = ((x - cX) * cos(angle)) + ((y - cY) * sin(angle))
 		rotY = -((x - cX) * sin(angle)) + ((y - cY) * cos(angle))
 		rotPoints.append((rotX + cX, rotY + cY))
-	return rotPoints
+	return tuple(rotPoints)
