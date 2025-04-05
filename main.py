@@ -1,11 +1,10 @@
-"""
-Flake Maker by Jutier
-Version: v1
+# Flake Maker by Jutier
+# Version: v1.2
 
-This module provides the main game loop and user interface management for the Flake Maker application.
-It includes classes and functions to initialize the game, handle user input, and update the game state.
-"""
-from flake import Snowflake, Line
+# This module provides the main game loop and user interface management for the Flake Maker application.
+# It includes classes and functions to initialize the game, handle user input, and update the game state.
+
+from flake import Snowflake
 from UI import InfoText, TextBox, Knob, BaseUI
 from datetime import datetime
 from math import pi
@@ -21,11 +20,40 @@ try:
 		WINDOW_HEIGHT = s['Window']['Height']
 		DISPLAY_WIDTH = s['UI']['ParamDisplay']['Width']
 		DISPLAY_HEIGHT = s['UI']['ParamDisplay']['Height']
+		BACKGROUNG_COLOR = s['Snowflake']['Colors']['BackGround']
+		YOUNG_COLOR = s['Snowflake']['Colors']['Young']
+		OLD_COLOR = s['Snowflake']['Colors']['Old']
+		MAX_GROWTH = s['Snowflake']['MaxGrowth']
+		INITIAL_THICKNESS = s['Snowflake']['Thick']
+		BRANCH_CROSSING = s['Snowflake']['BranchCrossing']
+		MAX_CYCLES = s['Snowflake']['MaxBranching']
 		FPS = s['FPS']
 except (FileNotFoundError, PermissionError) as e:
 	print(f"Error loading settings: {e}")
 	raise
 
+class PyGFlake(Snowflake):
+	"""
+	A subclass of Snowflake that adds functionality to draw lines on the canvas,
+	and some pygame.Surface properties.
+	"""
+
+	def __init__(self, *args, **kwargs):
+		"""Initialize a PyGFlake, adding image on top of base class."""
+		super().__init__(*args, **kwargs)
+		self.image = pygame.Surface((WINDOW_WIDTH, WINDOW_WIDTH))
+		self.image.fill(BACKGROUNG_COLOR)
+
+	def drawLine(self, line, points):
+		"""
+		Draws a line on the surface from the specified points and line properties.
+
+		Args:
+			line (object): The line object containing color and thickness information.
+			points (tuple of tuple): The start and end points of the line to be drawn.
+		"""
+		p0, p1 = points
+		pygame.draw.line(self.image, line.color, p0, p1, int(line.thick))
 
 
 class Game:
@@ -54,11 +82,10 @@ class Game:
 		self.running = True
 		self.stopGrowth = False
 
-		self.snowflake = Snowflake()
-
 		self.temperature = -12.5
 		self.humidity = 50
 
+		self._createFlake()
 		self._createUI()
 
 	def _createUI(self):
@@ -83,6 +110,8 @@ class Game:
    
 		self._UIElements = [self._ui_box, self._time_text, self._cycles_text, self._hmdt_box, self._hmdt_knob, self._temp_box, self._temp_knob]
 
+	def _createFlake(self):
+		self.snowflake = PyGFlake((WINDOW_WIDTH / 2, WINDOW_WIDTH / 2), INITIAL_THICKNESS, MAX_GROWTH, MAX_CYCLES, BRANCH_CROSSING, YOUNG_COLOR, OLD_COLOR)
 
 	def tempChange(self, value):
 		"""
@@ -112,6 +141,12 @@ class Game:
 		fileName = time.strftime("Screenshots/Snowflake_%d-%m-%y_%H-%M-%S.png")
 		pygame.image.save(self.snowflake.image, fileName)
 
+	def reset(self):
+		for line in self.snowflake.branch:
+			self.snowflake.purge(line)
+		del self.snowflake
+		self._createFlake()
+
 # Async function needed to use WebAssembly and run on browser with pygbag
 async def main(game):
 	"""
@@ -134,10 +169,7 @@ async def main(game):
 					game.stopGrowth = not game.stopGrowth 
 
 				elif event.key == pygame.K_r:
-					for line in game.snowflake.branch:
-						game.snowflake.purge(line)
-					del game.snowflake
-					game.snowflake = Snowflake()
+					game.reset()
 
 				elif event.key == pygame.K_s:
 					game.screenShot()
@@ -158,8 +190,9 @@ async def main(game):
 
 		if not game.stopGrowth:
 			game.snowflake.update(game.humidity, game.temperature, dt)
+			game.snowflake.drawBranches()
 
-		game.snowflake.draw(game.screen)
+		game.screen.blit(game.snowflake.image, (0, 0))
 
 		game._cycles_text.text = game.snowflake.cycles
 		game._time_text.text = round(game.snowflake.elapsedTime, 1)
