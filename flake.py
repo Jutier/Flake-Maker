@@ -165,7 +165,7 @@ class Snowflake():
 		elapsedTime (float): The elapsed time since the Snowflake was created.
 	"""
 
-	def __init__(self, center, thickness, growth, max_cycles, branch_crossing, color_young, color_old):
+	def __init__(self, center, thickness, growth, max_cycles, branch_crossing, color_young, color_old, **kwargs):
 		"""Initialize a new Snowflake."""
 		self.color_young = color_young if isinstance(color_young, (tuple, list)) else tuple(int(color_young[i:i+2], 16) for i in (1, 3, 5))
 		self.color_old = color_old if isinstance(color_old, (tuple, list)) else tuple(int(color_old[i:i+2], 16) for i in (1, 3, 5))
