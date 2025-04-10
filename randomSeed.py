@@ -16,7 +16,7 @@ def hashSeed(seed, salt=False):
 
 	Args:
 		seed (str or int): The input seed to generate the hash.
-		salt (bool): If True, a random salt is appended to the seed before hashing. Default is False.
+		salt (bool): If True, a random salt is added to the seed before hashing. Default is False.
 
 	Returns:
 		str: The resulting SHA256 hash in hexadecimal format.
@@ -27,23 +27,25 @@ def hashSeed(seed, salt=False):
 	sha = hashlib.sha256(encoded_seed).hexdigest()
 	return sha
 
-def evoVal(hex_list, target_min, target_max):
+def evoVal(hex_string, target_min, target_max, decimal=3):
 	"""
-	Maps a list of hexadecimal values to a range of values between target_min and target_max.
+	Maps hexadecimal values to a range of values between target_min and target_max.
+	Interprets each character in the given string as a separate hexadecimal value.
 
 	Args:
-		hex_list (list of str): A list of hexadecimal strings to map.
+		hex_string (str):  A string of hexadecimal characters, each representing a separate hexadecimal value.
 		target_min (float): The minimum value of the target range.
 		target_max (float): The maximum value of the target range.
+		decimal (int): The number of decimal places to round the result. Defaults to 3.
 
 	Returns:
 		list of float: A list of values mapped to the specified range.
 	"""
 	evo_list = []
-	for n_16 in hex_list:
+	for n_16 in hex_string:
 		n = int(n_16, 16) # Convert hex string to integer
 		value = interp(n, 0, 15, target_min, target_max)
-		evo_list.append(round(value, 3))
+		evo_list.append(round(value, decimal))
 	return evo_list
 
 def hash2Img(image, sha):
@@ -150,8 +152,9 @@ class PillowFlake(Snowflake):
 		Draws a line on the canvas from the specified points and line properties.
 
 		Args:
-			line (object): The line object containing color and thickness information.
+			line (object): The Line object containing color and thickness information.
 			points (tuple of tuple): The start and end points of the line to be drawn.
+
 		Returns:
 			None: This method modifies the image directly and does not return any value.
 		"""
@@ -161,7 +164,8 @@ class PillowFlake(Snowflake):
 
 def flakeFromHash(sha, dt=1, **kwargs):
 	"""
-	Generates a flake image based on a SHA256 hash. 
+	Generates a flake image based on a SHA256 hash.
+	The used hash is embedded to the image with steganography.
 
 	Args:
 		sha (str): The SHA256 hash used to generate the flake.
@@ -169,7 +173,7 @@ def flakeFromHash(sha, dt=1, **kwargs):
 		**kwargs: Additional parameters passed to the PillowFlake class.
 
 	Returns:
-		PIL.Image: The generated flake image, with hash steganography.
+		PIL.Image: The generated flake image, with steganography.
 	"""
 	evoH = evoVal(sha[:32], 0, 100) # Extract the first 32 hex characters for humidity evolution
 	evoT = evoVal(sha[32:], -20, -5) # Extract the last 32 hex characters for temperature evolution
@@ -185,26 +189,21 @@ def flakeFromHash(sha, dt=1, **kwargs):
 
 	return steg_image
 
-
-
-def flakeCollage(N, seed='random', **kwargs):
+def flakeCollage(N, **kwargs):
 	"""
-	Generates a collage of N flake.
-	Makes N hashes that are passed to collageFromHashList, those hashes are derived from the seed+salt.
+	Generates a collage of N flakes.
+	Makes N hashes that are passed to collageFromHashList.
 
 	Args:
-		N (int): The number of flakes along one dimension of the collage (grid size).
-		seed (str): The input seed used to generate the hashes, not really important.
+		N (int): The desired number of flakes on the collage.
 		**kwargs: Additional parameters passed to the collageFromHashList function.
 
 	Returns:
 		PIL.Image: The collage of flakes.
 	"""
-	hash_list = [hashSeed(seed, True) for _ in range(N)]
+	hash_list = [hashSeed('random', True) for _ in range(N)]
 
 	return collageFromHashList(hash_list, **kwargs)
-
-
 
 def collageFromHashList(hash_list, **kwargs):
 	"""
@@ -220,10 +219,9 @@ def collageFromHashList(hash_list, **kwargs):
 	"""
 	N = len(hash_list)
 	ceil = lambda n: -1 * int(-1 * n // 1) # Rounds up given number
-	rows = kwargs.pop('rows', ceil(N**(1/2))) # I believe this is a great default
-	columns = kwargs.pop('columns', rows)
+	rows = kwargs.get('rows', ceil(N**(1/2))) # I believe this is a great default
+	columns = kwargs.get('columns', rows)
 	size = kwargs.get('size', 700)
-	# Just for when I certainly forget: pop and get are being used for a reason
 
 	collage = Image.new(mode='RGB', size=(size*columns, size*rows), color=None)
 
@@ -243,20 +241,21 @@ def collageFromHashList(hash_list, **kwargs):
 
 	return collage
 
-
-
-def readCollage(image, rows, flakes):
+def readFlakes(image, **kwargs):
 	"""
-	Extracts the hashes from a collage of flake images by reading the hash embedded in each flake image.
+	Extracts the hashes from a flake or a collage by reading the hash embedded in each flake.
 
 	Args:
 		image (PIL.Image): The collage image from which to extract the hashes.
 		rows (int): The number of flake rows on the collage.
-		flakes (list): A list of The desired flakes  positions (row-wise).
+		flakes (list): A list of The desired flakes  positions (row-wise, starting from 1).
 
 	Returns:
 		list: A list of extracted SHA256 hashes.
 	"""
+	rows = kwargs.get('rows', 1)
+	flakes = kwargs.get('flakes', [1])
+
 	hashList = []
 	size = int(image.size[1] / rows) # Calculate the size of each flake image
 
@@ -265,3 +264,123 @@ def readCollage(image, rows, flakes):
 		sha = img2Hash(image, pos)
 		hashList.append(sha)
 	return hashList
+
+
+
+def main():
+	"""
+	This function handles the CLI logic.
+	Performs actions such as reading from an image, generating
+	snowflakes from a seed or hash file, and saving or displaying the results.
+
+	CLI Arguments:
+		--seed: Desired seed to generate the flake.
+		--rows: Number of rows in the image.
+		--columns: Number of columns in the image.
+		--hashes: File with hashes for the collage.
+		--save: File to save the output, either an image or flakes.
+		-r/--read: Read snowflakes from the given image.
+		--flakes: Desired flakes to read from the collage.
+
+	Example usage:
+		python script.py --rows 5 --columns 5 --save output.png
+		python script.py --read input.png --save output.txt
+	"""
+	import argparse
+
+	parser = argparse.ArgumentParser(
+		description='Generates a Snowflake from a seed or hash file, can also read hashes from an image.'
+	)
+
+	parser.add_argument(
+		'--seed',
+		metavar='SEED',
+		help='Specific seed value to generate the snowflake.'
+	)
+
+	parser.add_argument(
+		'--rows',
+		default=1,
+		type=int,
+		metavar='N',
+		help='Number of rows in the image.'
+	)
+
+	parser.add_argument(
+		'--columns',
+		default=1,
+		type=int,
+		metavar='N',
+		help='Number of columns in the image.'
+	)
+
+	parser.add_argument(
+		'--hashes',
+		type=argparse.FileType('r'),
+		metavar='FILE',
+		help='File containing hashes for the collage (one hash per line).'
+	)
+
+	parser.add_argument(
+		'--save',
+		metavar='FILE',
+		help='File to save the output, image or hashes (append).'
+	)
+
+	parser.add_argument(
+		'-r', '--read',
+		type=argparse.FileType('rb'),
+		metavar='FILE',
+		help='Read snowflakes from the given image file.'
+	)
+
+	parser.add_argument(
+		'--flakes',
+		nargs='*',
+		type=int,
+		metavar='N',
+		help='Desired flakes to read from the collage.'
+	)
+
+	args = parser.parse_args()
+	kwargs = {k: v for k, v in vars(args).items() if v} # filter None values
+
+	if args.read: # -r/--read
+		image = Image.open(args.read)
+		hash_list = readFlakes(image, **kwargs)
+
+		if args.save: # --save
+			with open(args.save, 'a') as file:
+				file.write('\n'.join(hash_list) + '\n')
+
+		else:
+			print(hash_list, sep='\n')
+
+	else:
+		N = (args.rows * args.columns) # --rows * --columns
+
+		if args.hashes: # --hashes
+			hash_list = args.hashes.read().splitlines()
+
+			if N < 2:
+				image = collageFromHashList(hash_list)
+
+			else:
+				image = collageFromHashList(hash_list, **kwargs)
+
+		elif N > 1:
+				image = flakeCollage(N, **kwargs)
+
+		else:
+			sha = hashSeed(args.seed, not args.seed) # --seed
+			image = flakeFromHash(sha)
+			print(sha)
+
+		if args.save: # --save
+			image.save(args.save)
+
+		else:
+			image.show()
+
+if __name__ == "__main__":
+	main()
