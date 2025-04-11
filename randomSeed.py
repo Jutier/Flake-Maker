@@ -1,5 +1,5 @@
 # Flake Maker by Jutier
-# Version: v1.2
+# Version: v2
 
 # This module generates snowflakes based on seeds or hashes.
 
@@ -247,20 +247,20 @@ def readFlakes(image, **kwargs):
 
 	Args:
 		image (PIL.Image): The collage image from which to extract the hashes.
-		rows (int): The number of flake rows on the collage.
+		columns (int): The number of flake columns on the collage.
 		flakes (list): A list of The desired flakes  positions (row-wise, starting from 1).
 
 	Returns:
 		list: A list of extracted SHA256 hashes.
 	"""
-	rows = kwargs.get('rows', 1)
+	columns = kwargs.get('columns', 1)
 	flakes = kwargs.get('flakes', [1])
 
 	hashList = []
-	size = int(image.size[1] / rows) # Calculate the size of each flake image
+	size = int(image.size[0] / columns) # Calculate the size of each flake image
 
 	for p in flakes:
-		pos = (((p - 1) % rows) * size, ((p - 1) // rows) * size) # Calculate the position of the current flake in the collage
+		pos = (((p - 1) // columns) * size, ((p - 1) % columns) * size) # Calculate the position of the current flake in the collage
 		sha = img2Hash(image, pos)
 		hashList.append(sha)
 	return hashList
